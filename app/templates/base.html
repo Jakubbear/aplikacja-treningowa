@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12151a">
+  <title>{{ tytul }} — trening</title>
+  <link rel="stylesheet" href="/static/style.css?v=2026-10-05e">
+</head>
+<body>
+  <header class="pasek">
+    <a href="{{ wstecz_href|default('/') }}" class="wstecz">{{ wstecz_tekst|default('Health Dashboard') }}</a>
+    <span class="tytul">{{ tytul_paska|default(tytul) }}</span>
+    {% if uklad %}<span class="znacznik uklad">{{ uklad }}</span>{% endif %}
+  </header>
+  <main>
+    {% block tresc %}{% endblock %}
+  </main>
+
+  {# Pasek na dole, nie na górze: obsługa dzieje się kciukiem jednej ręki,
+     a dół ekranu to jedyne miejsce, do którego kciuk sięga bez przekładania
+     telefonu. Trening stoi pośrodku, bo to po niego wchodzi się tu najczęściej. #}
+  <nav class="zakladki">
+    <a href="/postep" class="{% if zakladka == 'postep' %}wybrana{% endif %}">
+      <svg class="ikonka" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16 6-6 4 4 6-7"/><path d="M15 7h5v5"/></svg><span>Postęp</span>
+    </a>
+    <a href="/" class="{% if zakladka == 'trening' %}wybrana{% endif %}">
+      <svg class="ikonka" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9v6M17 9v6M4 10v4M20 10v4M7 12h10"/><rect x="2" y="8" width="3" height="8" rx="1"/><rect x="19" y="8" width="3" height="8" rx="1"/></svg><span>Trening</span>
+    </a>
+    <a href="/historia" class="{% if zakladka == 'historia' %}wybrana{% endif %}">
+      <svg class="ikonka" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2-5.7"/><path d="M4 4v5h5M12 7v5l3 2"/></svg><span>Historia</span>
+    </a>
+  </nav>
+</body>
+</html>

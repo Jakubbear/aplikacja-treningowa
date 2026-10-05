@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block tresc %}
+
+{# Mini-kalendarz miesiąca obok zakresu dat: dni
+   wybranego tygodnia na pomarańczowo. Każdy wiersz jest linkiem do swojego
+   tygodnia — skok o kilka tygodni bez klikania strzałek. #}
+{% macro karta_dat(licznik=None) %}
+<div class="daty">
+  <div class="mini-kal" aria-label="{{ kalendarz.miesiac }}">
+    <div class="mk-mies">{{ kalendarz.miesiac }}</div>
+    <div class="mk-wiersz mk-naglowek">{% for d in ['P','W','Ś','C','P','S','N'] %}<span>{{ d }}</span>{% endfor %}</div>
+    {% for t in kalendarz.tygodnie %}
+    <a class="mk-wiersz{% if t.wybrany %} wybrany{% endif %}" href="/?tydzien={{ t.pon }}">{% for d in t.dni %}<span class="{% if not d.w_miesiacu %}obcy{% endif %}{% if d.dzis %} dzis{% endif %}">{{ d.dzien }}</span>{% endfor %}</a>
+    {% endfor %}
+  </div>
+  {# Zakres dat obok kalendarza zszedł — kalendarz go pokazuje, a pełny zakres
+     stoi w pasku u góry. Wolne miejsce po prawej na ramkę „Idzie w górę". #}
+  <div class="daty-prawo">
+    {% if licznik is not none %}<span class="licznik-cwiczen">{{ licznik }} ćwiczeń</span>{% endif %}
+    {% if podbicie is not none %}
+    <div class="podbicie">
+      <h3>Idzie w górę</h3>
+      {% for x in podbicie %}
+      <p><span class="strzalka-gora">↑</span> <span class="nazwa-pod">{{ x.exercise }}</span> <span class="kg-pod">{{ x.z|kg }} → <strong>{{ x.na|kg }}</strong></span></p>
+      {% else %}
+      <p class="notka">Ciężary bez zmian — wszystkie serie po 10 dają +2,5 kg.</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}
+
+
+{#
+  Jednostką widoku jest tydzień, nie kolejny trening z planu.
+  Strzałki po bokach przechodzą między tygodniami. Drugi trening w tym samym
+  tygodniu (urlop, wolne w domu) dodaje się plusem — zamknięcie treningu nie
+  przeskakuje samo na następny.
+#}
+<section class="karta naglowek-tygodnia nawigacja-tygodni">
+  <a class="strzalka" href="/?tydzien={{ poprzedni }}" aria-label="Poprzedni tydzień">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+  </a>
+  <div class="srodek">
+    <h1>{{ tytul_tygodnia }}</h1>
+    {% if biezacy %}
+    <p class="opis-tygodnia">{{ opis }}</p>
+    {% else %}
+    <a class="opis-tygodnia wroc" href="/?tydzien=">{{ opis }} · wróć do bieżącego</a>
+    {% endif %}
+  </div>
+  <a class="strzalka" href="/?tydzien={{ nastepny }}" aria-label="Następny tydzień">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+  </a>
+</section>
+
+{% if not sesja %}
+<section class="karta naglowek-treningu">
+  {{ karta_dat() }}
+</section>
+{% endif %}
+
+{% for w in wykonane %}
+<a class="karta wykonany{% if not w.closed_at %} w-toku{% endif %}"
+   href="/sesja/{{ w.performed_id }}{% if w.closed_at %}/podsumowanie{% endif %}">
+  <span class="znak">{% if w.closed_at %}✓{% else %}…{% endif %}</span>
+  <span class="opis">
+    <strong>{{ w.label }}</strong>
+    <span class="meta">{{ dni[w.performed_on.weekday()] }} {{ w.performed_on.strftime('%d.%m') }} · {{ w.location|miejsce }} · {{ w.cwiczen }} ćw.{% if not w.closed_at %} · w toku{% endif %}</span>
+  </span>
+  <svg class="dalej" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+</a>
+{% endfor %}
+
+{% if mozna_dodac %}
+<a class="karta dodaj-trening" href="/?tydzien={{ wybrany }}&dodaj=1">
+  <span class="plus">+</span> Dodaj trening w tym tygodniu
+</a>
+{% endif %}
+
+{% if sesja %}
+<section class="karta naglowek-treningu">
+  {{ karta_dat(pozycje|length) }}
+  {% if dodany %}<p class="notka">Dodatkowy trening w tym tygodniu — kolejny z planu.</p>
+  {% elif poprzedni_w_kolejce and sesja.label != poprzedni_w_kolejce %}<p class="notka">Najpierw {{ poprzedni_w_kolejce }}.</p>{% endif %}
+</section>
+
+<ol class="lista-plan trening-plan karta">
+  {% for p in pozycje %}
+  <li class="plan-item">
+    <div class="wiersz-glowny">
+      <span class="numer">{{ p.ordinal }}</span>
+      <span class="nazwa">{{ p.exercise }}</span>
+    </div>
+
+    <p class="plan">
+      {{ p.sets }}×{% if p.measure == 'time' %}{{ p.duration_seconds }} s{% elif p.reps_min == p.reps_max %}{{ p.reps_min }}{% else %}{{ p.reps_min }}–{{ p.reps_max }}{% endif %}
+      {% if p.weight_planned_kg %} @ {{ p.weight_planned_kg|kg }} kg{% endif %}
+    </p>
+    {% if p.superset_group %}<p class="znaczniki"><span class="znacznik">seria łączona {{ p.superset_group }}</span></p>{% endif %}
+
+  </li>
+  {% endfor %}
+</ol>
+
+{% if mozna_startowac %}
+{# Rozdzielenie serii łączonej jest osobną kartą, nie przyciskiem przy każdej
+   pozycji: dotyczy całej grupy naraz i zmienia plan na przyszłość, nie tylko
+   ten tydzień — patrz `db.split_superset_group`. #}
+{% set grupy = pozycje|selectattr('superset_group')|map(attribute='superset_group')|unique|list %}
+{% if grupy %}
+<section class="karta rozdziel-grupy">
+  <h2>Serie łączone w tym planie</h2>
+  {% for grupa in grupy %}
+  <form method="post" action="/plan/rozdziel-serie" class="wiersz-serii">
+    <input type="hidden" name="group" value="{{ grupa }}">
+    <button type="submit" class="drobny">Rozdziel serię łączoną {{ grupa }}</button>
+  </form>
+  {% endfor %}
+  <p class="notka">Dotyczy tego i wszystkich kolejnych treningów planu — już zrobione treningi się nie zmieniają.</p>
+</section>
+{% endif %}
+
+<form method="post" action="/sesja/start" class="karta start">
+  <input type="hidden" name="planned_id" value="{{ sesja.planned_id }}">
+  <label>Gdzie trenujesz
+    <select name="location">
+      <option value="dom" {% if sesja.location == 'dom' %}selected{% endif %}>dom</option>
+      <option value="trasa" {% if sesja.location == 'trasa' %}selected{% endif %}>trasa</option>
+      <option value="silownia" {% if sesja.location == 'silownia' %}selected{% endif %}>siłownia</option>
+    </select>
+  </label>
+  <button type="submit" class="glowny">Zaczynam trening</button>
+</form>
+{% endif %}
+
+{% elif not wykonane %}
+<section class="karta pusty-tydzien">
+  <p class="notka">Brak treningu w tym tygodniu.</p>
+</section>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,12 @@
+# Plany treningowe to dane osobowe — trzymaj je tutaj i nie commituj.
+/plany/moje/*
+!/plany/moje/.gitkeep
+
+# Hasło do bazy.
+/sekrety/*
+!/sekrety/.gitkeep
+
+__pycache__/
+*.py[cod]
+.venv/
+.env

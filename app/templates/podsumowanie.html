@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block tresc %}
+
+<section class="karta naglowek-sesji zrobione">
+  <h1>{{ naglowek.label or 'Trening' }} — zamknięty</h1>
+  <p class="meta">
+    {{ naglowek.performed_on.strftime('%d.%m.%Y') }} · {{ naglowek.location|miejsce }}
+    {% if naglowek.feeling %} · {{ naglowek.feeling }}{% endif %}
+  </p>
+  {% if naglowek.notes %}<p class="notka">{{ naglowek.notes }}</p>{% endif %}
+</section>
+
+{% if odchylenia %}
+<section class="karta">
+  <h2>Względem planu — w kolejności wykonania</h2>
+  <ul class="odchylenia">
+    {% for o in odchylenia %}
+    <li class="{% if o.sets_done == 0 %}pominiete{% elif o.exceeded or o.substituted %}inne{% else %}zgodne{% endif %}">
+      <span class="nazwa">{{ o.exercise }}</span>
+      {# Lista idzie w kolejności wykonania; numer z planu widać tylko tam, gdzie się różni. #}
+      {% if o.sets_done and o.plan_nr != loop.index %}<span class="znacznik">w planie {{ o.plan_nr }}.</span>{% endif %}
+      {% if o.sets_done == 0 %}
+        <span class="ocena">nie zrobione</span>
+      {% else %}
+        <span class="ocena">
+          {{ o.sets_done }}/{{ o.sets_planned }} serii ·
+          {% if o.reps_min_done %}{{ o.reps_min_done }}{% if o.reps_max_done != o.reps_min_done %}–{{ o.reps_max_done }}{% endif %} powt.{% endif %}
+          {% if o.weight_max_done %} @ {{ o.weight_max_done|kg }} kg{% endif %}
+        </span>
+        {% if o.exceeded %}<span class="znacznik ponad">ponad plan ({{ o.reps_max }})</span>{% endif %}
+        {% if o.substituted %}<span class="znacznik">podmienione</span>{% endif %}
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="notka">
+    To samo widzi agent przy najbliższej analizie — stąd bierze się korekta reszty planu.
+  </p>
+</section>
+{% endif %}
+
+{% if odczucia %}
+<section class="karta">
+  <h2>Ból i wysiłek</h2>
+  <ul class="serie proste">
+    {% for o in odczucia %}
+    <li>
+      <span class="nazwa">{{ o.exercise }}</span>
+      {% if o.effort %}<span class="znacznik{% if o.effort >= 5 %} ponad{% endif %}">wysiłek {{ o.effort }}/5</span>{% endif %}
+      {% if o.pain_note %}<p class="notka">{{ o.pain_note }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="notka">
+    Ból zapisany przy konkretnym ruchu, nie przy całym treningu — to ten rozdział
+    czyta agent, zanim ruszy plan.
+  </p>
+</section>
+{% endif %}
+
+<section class="karta">
+  <h2>Zapisane serie</h2>
+  <ul class="serie proste">
+    {% for s in serie %}
+    <li>
+      <span class="nazwa">{{ s.exercise }}</span>
+      <span>seria {{ s.set_number }} —
+        {% if s.duration_seconds %}{{ s.duration_seconds }} s{% else %}{{ s.repetitions }} powt.{% endif %}
+        {% if s.weight_total_kg %} @ {{ s.weight_total_kg|kg }} kg{% endif %}
+        {% if s.rest_seconds %}<span class="znacznik{% if s.rest_seconds < 120 %} ponad{% endif %}">przerwa {{ s.rest_seconds }} s</span>{% endif %}
+      </span>
+      {% if s.substituted_from %}<p class="notka">zamiast: {{ s.substituted_from }}</p>{% endif %}
+      {% if s.note %}<p class="notka">{{ s.note }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<p class="stopka"><a href="/" class="przycisk-wiersz">Zakończ</a></p>
+
+{% endblock %}

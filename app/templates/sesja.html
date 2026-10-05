@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{#
+  Układ karty ćwiczenia wg makiety z 2026-09-13. Zasada: wszystkie serie z planu są
+  widoczne od razu, z podstawionymi liczbami — trening polega na potwierdzaniu albo
+  poprawianiu tego, co już stoi na ekranie, a nie na wypełnianiu pustego formularza
+  między jedną serią a drugą.
+
+  Bez JS działa w całości: każdy wiersz to osobny formularz z własnym przyciskiem.
+  `app.js` tylko chowa przyciski „zapisz" tam, gdzie zapis da się zrobić w tle.
+#}
+
+{% macro pole_ciezaru(nazwa, wartosc, gryf, id, measure) %}
+  {# Pytamy o ciężar ŁĄCZNY, razem z gryfem — tak, jak się o nim myśli przy ławce.
+     Rozbiciem na gryf i talerze zajmuje się `_rozbij_ciezar` po stronie serwera.
+
+     Ćwiczenia mierzone czasem (plank) nie dostają tego pola w ogóle: pytanie
+     „ile kilogramów" przy planku to pusty kwadrat do wyminięcia kciukiem. #}
+  {% if measure != 'time' %}
+  <label class="pole" for="{{ id }}">
+    <span class="etykieta">Ciężar</span>
+    <span class="wejscie">
+      <input type="text" id="{{ id }}" name="{{ nazwa }}" inputmode="decimal"
+             value="{{ wartosc }}" placeholder="masa ciała" autocomplete="off">
+      <span class="jedn">kg</span>
+    </span>
+  </label>
+  {% endif %}
+  <input type="hidden" name="bar_weight_kg" value="{{ gryf|kg }}">
+{% endmacro %}
+
+{% macro pole_przerwy(wartosc, id, domyslna) %}
+  {# Przerwa dostaje własną linię, nie trzecią kolumnę obok ciężaru i powtórzeń:
+     trzy pola w rzędzie na 390 px schodzą poniżej szerokości, przy której da się
+     w nie trafić kciukiem. Podstawione 120 s to standard potwierdzony przez
+     z testów — zwykle wystarczy nie ruszać. #}
+  <label class="pole przerwa" for="{{ id }}">
+    <span class="etykieta">Przerwa przed tą serią</span>
+    <span class="wejscie">
+      <input type="number" id="{{ id }}" name="rest_seconds" inputmode="numeric"
+             value="{{ wartosc if wartosc else domyslna }}" autocomplete="off">
+      <span class="jedn">s</span>
+    </span>
+  </label>
+{% endmacro %}
+
+{% macro pole_powtorzen(measure, powt, sek, id) %}
+  {% if measure == 'time' %}
+  <label class="pole" for="{{ id }}">
+    <span class="etykieta">Sekundy</span>
+    <span class="wejscie">
+      <input type="number" id="{{ id }}" name="duration_seconds" inputmode="numeric"
+             value="{{ sek }}" autocomplete="off">
+    </span>
+  </label>
+  {% else %}
+  <label class="pole" for="{{ id }}">
+    <span class="etykieta">Powtórzenia</span>
+    <span class="wejscie">
+      <input type="number" id="{{ id }}" name="repetitions" inputmode="numeric"
+             value="{{ powt }}" autocomplete="off">
+    </span>
+  </label>
+  {% endif %}
+{% endmacro %}
+
+{% block tresc %}
+
+<section class="karta naglowek-sesji trwa">
+  <h1>{{ naglowek.label or 'Trening' }}</h1>
+  <p class="meta">{{ naglowek.performed_on.strftime('%d.%m.%Y') }} · {{ naglowek.location|miejsce }} · trwa</p>
+</section>
+
+{# Pierwsza karta bez żadnej serii to „następne ćwiczenie" — ona nie dostaje
+   przycisku „robię teraz", bo już stoi tam, gdzie by ją przeniósł. #}
+{% set niezaczete = pozycje|rejectattr('id', 'in', serie.keys())|list %}
+{% set nastepna_id = niezaczete[0].id if niezaczete else none %}
+
+{% for p in pozycje %}
+{% set zrobione = serie.get(p.id, []) %}
+{% set ost = ostatnie.get(p.exercise_id) %}
+{% set odczucie = odczucia.get(p.exercise_id) %}
+{# Domyślny ciężar wiersza: plan, a gdy plan milczy — to, co podniosłeś ostatnio. #}
+{# Zero to nie ciężar, tylko masa własnego ciała. Podciąganie miało w polu „0 kg",
+   bo poprzedni wynik zapisał się z zerowym obciążeniem — teraz zostaje podpowiedź. #}
+{% set ciezar_domyslny = p.weight_planned_kg or (ost.weight_total_kg if ost and ost.weight_total_kg else None) %}
+
+{# Sufit serii przychodzi z `main.LIMIT_SERII` (domyślnie trzy, każda do
+   upadku). Plan może przewidywać mniej, nigdy więcej. #}
+{% set ile_serii = [p.sets, limit_serii]|min %}
+{% set wszystkie = [zrobione|length, ile_serii]|max %}
+
+<section class="karta cwiczenie{% if zrobione|length >= ile_serii %} ukonczone{% endif %}" id="poz-{{ p.id }}">
+
+  {# Przełączniki muszą stać PRZED treścią karty, bo reszta sięga do nich
+     selektorem `:checked ~ …` — bez jednej linijki JS-u. #}
+  <input type="checkbox" id="edycja-{{ p.id }}" class="przelacznik-edycji">
+  <input type="checkbox" id="zamiana-{{ p.id }}" class="przelacznik-zamiany">
+
+  <header class="karta-glowa">
+    <span class="numer">{{ p.ordinal }}</span>
+    <h2 class="nazwa">{{ p.exercise }}</h2>
+
+    <label for="zamiana-{{ p.id }}" class="ikona ikona-zamiany"
+           title="Podmień ćwiczenie" aria-label="Podmień ćwiczenie">⇄</label>
+
+    {# Ołówek ma sens dopiero, gdy jest co poprawiać. Bez zapisanych serii nie
+       odsłaniał niczego i wyglądał na zepsuty — teraz jest jawnie wygaszony. #}
+    {% if zrobione %}
+    <label for="edycja-{{ p.id }}" class="ikona ikona-edycji"
+           title="Popraw zapisane serie" aria-label="Popraw zapisane serie">✎</label>
+    {% else %}
+    <span class="ikona ikona-edycji nieczynna" aria-hidden="true"
+          title="Nie ma jeszcze czego poprawiać">✎</span>
+    {% endif %}
+
+  </header>
+
+  {# „Robię teraz" przenosi kartę zaraz za ćwiczenia już zaczęte — ekran idzie
+     za faktycznym treningiem. Seria łączona jedzie w całości. Zmienia tylko ten
+     trening; kolejność wykonania i tak widać potem z czasów zapisu serii. #}
+  {% if not zrobione and p.id != nastepna_id %}
+  <form method="post" action="/sesja/{{ naglowek.id }}/robie-teraz" class="robie-teraz">
+    <input type="hidden" name="planned_item_id" value="{{ p.id }}">
+    <button type="submit" class="drobny">▶ Robię teraz</button>
+  </form>
+  {% endif %}
+
+  {# Panel podmiany jest ZWYKŁYM blokiem w układzie, nie nakładką nad kartą.
+     Nakładka (`position: absolute` chowana przez `display: none`) zostawiała
+     w WebKicie na iPhonie swoje piksele po zamknięciu — panel znikał logicznie,
+     a nadal był widoczny na ekranie. Blok w normalnym przepływie wymusza
+     przeliczenie układu, więc odrysowanie jest pewne.
+     Przy okazji przestał zasłaniać serie, nad którymi wcześniej wisiał. #}
+  <div class="panel-zamiany">
+      <form method="post" action="/sesja/{{ naglowek.id }}/seria" class="wiersz-serii podmiana">
+        <input type="hidden" name="planned_item_id" value="{{ p.id }}">
+        <input type="hidden" name="exercise_id" value="{{ p.exercise_id }}">
+        {# Lista z katalogu, nie pole tekstowe. Wpisywanie z palca w środku treningu
+           tworzyło nowe pozycje katalogu z literówek — a wtedy historia tego samego
+           ruchu rozjeżdża się na dwie nazwy. #}
+        <label class="pole szeroki">
+          <span class="etykieta">Zamiast tego robię</span>
+          <span class="wejscie">
+            <select name="zamiennik" required>
+              <option value="" selected disabled>wybierz z listy</option>
+              {% for e in katalog %}{% if e.id != p.exercise_id %}
+              <option value="{{ e.name }}">{{ e.name }}</option>
+              {% endif %}{% endfor %}
+            </select>
+          </span>
+        </label>
+        <label class="pole szeroki">
+          <span class="etykieta">Dlaczego</span>
+          <span class="wejscie">
+            <input type="text" name="note" placeholder="np. bolał bark">
+          </span>
+        </label>
+        <div class="pola-para">
+          {{ pole_ciezaru('weight_total_kg', ciezar_domyslny|kg, p.default_bar_weight_kg, 'zam-kg-%s'|format(p.id), p.measure) }}
+          {{ pole_powtorzen(p.measure, p.reps_max or p.reps_min or '', p.duration_seconds or '', 'zam-powt-%s'|format(p.id)) }}
+        </div>
+        <button type="submit" class="glowny">Zapisz pierwszą serię zamiennika</button>
+        <p class="notka">Zapis trafia do bazy razem z informacją, co miało być zamiast tego.</p>
+      </form>
+  </div>
+
+
+  {% if p.superset_group %}
+  <form method="post" action="/sesja/{{ naglowek.id }}/rozdziel-serie" class="znaczniki">
+    <input type="hidden" name="group" value="{{ p.superset_group }}">
+    <button type="submit" class="znacznik ponad"
+            title="Kliknij, żeby ta grupa przestała być liczona jako seria łączona">
+      seria łączona {{ p.superset_group }} — kliknij, by rozdzielić
+    </button>
+  </form>
+  {% endif %}
+
+  <ol class="serie">
+    {# Najpierw to, co już zapisane — edycja idzie w tle, bez przeładowania. #}
+    {% for s in zrobione %}
+    <li class="wiersz zapisana">
+      <form method="post" action="/sesja/{{ naglowek.id }}/seria/{{ s.id }}/popraw"
+            class="wiersz-serii" data-autozapis>
+        <input type="hidden" name="planned_item_id" value="{{ p.id }}">
+        <span class="nr-serii">Seria {{ s.set_number }}</span>
+        {{ pole_ciezaru('weight_total_kg', s.weight_total_kg|kg if s.weight_total_kg else '', s.bar_weight_kg, 's-kg-%s'|format(s.id), s.measure) }}
+        {{ pole_powtorzen(s.measure, s.repetitions or '', s.duration_seconds or '', 's-powt-%s'|format(s.id)) }}
+        <button type="submit" class="zapisz drobny">zapisz</button>
+        {% if s.set_number > 1 %}{{ pole_przerwy(s.rest_seconds, 's-prz-%s'|format(s.id), p.rest_seconds or 120) }}{% endif %}
+      </form>
+      <form method="post" action="/sesja/{{ naglowek.id }}/seria/{{ s.id }}/skasuj" class="akcja">
+        <input type="hidden" name="planned_item_id" value="{{ p.id }}">
+        <button type="submit" class="ikona kasuj" title="Skasuj serię" aria-label="Skasuj serię {{ s.set_number }}">🗑</button>
+      </form>
+      {% if s.substituted_from %}<p class="notka">zamiast: {{ s.substituted_from }}</p>{% endif %}
+      {% if s.note %}<p class="notka">{{ s.note }}</p>{% endif %}
+    </li>
+    {% endfor %}
+
+    {# Potem serie, które plan przewiduje, a których jeszcze nie ma w bazie.
+       Liczby są podstawione, więc zwykle wystarczy potwierdzić haczykiem. #}
+    {% for nr in range(zrobione|length + 1, ile_serii + 1) %}
+    <li class="wiersz planowana">
+      <form method="post" action="/sesja/{{ naglowek.id }}/seria" class="wiersz-serii">
+        <input type="hidden" name="planned_item_id" value="{{ p.id }}">
+        <input type="hidden" name="exercise_id" value="{{ p.exercise_id }}">
+        <span class="nr-serii">Seria {{ nr }}</span>
+        {{ pole_ciezaru('weight_total_kg', ciezar_domyslny|kg, p.default_bar_weight_kg, 'n-kg-%s-%s'|format(p.id, nr), p.measure) }}
+        {{ pole_powtorzen(p.measure, p.reps_max or p.reps_min or '', p.duration_seconds or '', 'n-powt-%s-%s'|format(p.id, nr)) }}
+        <button type="submit" class="ikona potwierdz" title="Zapisz serię" aria-label="Zapisz serię {{ nr }}">✓</button>
+        {% if nr > 1 %}{{ pole_przerwy(none, 'n-prz-%s-%s'|format(p.id, nr), p.rest_seconds or 120) }}{% endif %}
+      </form>
+    </li>
+    {% endfor %}
+  </ol>
+
+  {% if wszystkie < limit_serii %}
+  <details class="dodatkowa">
+    <summary class="przycisk-wiersz">+ Dodaj serię</summary>
+    <form method="post" action="/sesja/{{ naglowek.id }}/seria" class="wiersz-serii">
+      <input type="hidden" name="planned_item_id" value="{{ p.id }}">
+      <input type="hidden" name="exercise_id" value="{{ p.exercise_id }}">
+      <span class="nr-serii">Seria {{ wszystkie + 1 }}</span>
+      {{ pole_ciezaru('weight_total_kg', ciezar_domyslny|kg, p.default_bar_weight_kg, 'd-kg-%s'|format(p.id), p.measure) }}
+      {{ pole_powtorzen(p.measure, p.reps_max or p.reps_min or '', p.duration_seconds or '', 'd-powt-%s'|format(p.id)) }}
+      <button type="submit" class="ikona potwierdz" title="Zapisz serię" aria-label="Zapisz dodatkową serię">✓</button>
+      {{ pole_przerwy(none, 'd-prz-%s'|format(p.id), p.rest_seconds or 120) }}
+    </form>
+  </details>
+  {% endif %}
+
+  <form method="post" action="/sesja/{{ naglowek.id }}/odczucie" class="odczucie" data-autozapis>
+    <input type="hidden" name="planned_item_id" value="{{ p.id }}">
+    <input type="hidden" name="exercise_id" value="{{ p.exercise_id }}">
+
+    {# Puste pole tekstowe pod pytaniem „Czy coś boli?" stało otworem przy każdym
+       ćwiczeniu, choć odpowiedź prawie zawsze brzmi „nie". Teraz pytanie zajmuje
+       jedną linijkę, a miejsce na opis pojawia się dopiero po wskazaniu „tak".
+       Przełącznik nie ma atrybutu `name`, więc nie jedzie z formularzem do serwera —
+       o tym, czy coś boli, rozstrzyga treść pola, nie stan tego pola wyboru. #}
+    <input type="radio" id="boli-nie-{{ p.id }}" name="boli" value="nie" class="radio-nie"
+           {% if not (odczucie and odczucie.pain_note) %}checked{% endif %}>
+    <input type="radio" id="boli-tak-{{ p.id }}" name="boli" value="tak" class="radio-tak"
+           {% if odczucie and odczucie.pain_note %}checked{% endif %}>
+    <div class="pytanie-bolu">
+      <span class="etykieta">Czy coś boli?</span>
+      <div class="tak-nie">
+        <label for="boli-nie-{{ p.id }}" class="opcja-nie">nie</label>
+        <label for="boli-tak-{{ p.id }}" class="opcja-tak">tak</label>
+      </div>
+    </div>
+    <label class="pole szeroki pole-bolu" for="bol-{{ p.id }}">
+      <span class="wejscie">
+        <input type="text" id="bol-{{ p.id }}" name="pain_note"
+               value="{{ odczucie.pain_note if odczucie and odczucie.pain_note else '' }}"
+               placeholder="gdzie i jak mocno">
+      </span>
+    </label>
+
+    {# Pięć stopni, nie dziesięć: różnica między „7" a „8" jest zmyślona, a dziesięć
+       pól w rzędzie miało po 30 px na 390 px ekranu. Słupek rośnie i czerwienieje,
+       więc wybór da się zrobić wzrokiem, bez czytania cyfry. #}
+    <fieldset class="wysilek">
+      <legend class="etykieta">Intensywność wysiłku</legend>
+      <div class="skala">
+        {% for n in range(1, 6) %}
+        <input type="radio" id="wys-{{ p.id }}-{{ n }}" name="effort" value="{{ n }}"
+               {% if odczucie and odczucie.effort == n %}checked{% endif %}>
+        <label for="wys-{{ p.id }}-{{ n }}" class="stopien-{{ n }}">
+          <span class="slupek"></span>
+          <span class="opis">{{ ['lekko', 'spokojnie', 'solidnie', 'ciężko', 'upadek'][n - 1] }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <button type="submit" class="zapisz drobny">zapisz odczucie</button>
+  </form>
+</section>
+{% endfor %}
+
+{% if poza_planem %}
+<section class="karta">
+  <h2>Poza planem</h2>
+  <ul class="serie proste">
+    {% for s in poza_planem %}
+    <li><span class="nazwa">{{ s.exercise }}</span> — {{ s.repetitions or s.duration_seconds }}{% if s.weight_total_kg %} @ {{ s.weight_total_kg|kg }} kg{% endif %}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<form method="post" action="/sesja/{{ naglowek.id }}/zamknij" class="karta zamkniecie">
+  <h2>Koniec treningu</h2>
+  <label class="pole szeroki">
+    <span class="etykieta">Jak poszło</span>
+    <span class="wejscie"><input type="text" name="feeling" placeholder="np. mocno, ale czysto"></span>
+  </label>
+  <label class="pole szeroki">
+    <span class="etykieta">Uwagi</span>
+    <span class="wejscie"><input type="text" name="notes" placeholder="cokolwiek wartego zapamiętania"></span>
+  </label>
+  <button type="submit" class="glowny konczacy">Zamykam trening</button>
+  <p class="notka">Po zamknięciu serii nie da się już nadpisać — korekta zapisze się jako nowa wersja.</p>
+</form>
+
+<script src="/static/app.js?v=2026-10-04b" defer></script>
+
+{% endblock %}

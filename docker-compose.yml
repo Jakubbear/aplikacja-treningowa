@@ -1,0 +1,59 @@
+# Cała aplikacja: baza + serwer WWW. Dwa kontenery, nic więcej.
+#
+# Hasło do bazy nie jest zmienną środowiskową, tylko plikiem podanym przez
+# `secrets`. Powód jest praktyczny: zmienną widać przez `docker inspect`
+# i ze środowiska sąsiedniego kontenera, plik — nie.
+#
+# Zanim to ruszysz:
+#   mkdir -p sekrety && head -c 24 /dev/urandom | base64 > sekrety/haslo-bazy
+#   chmod 600 sekrety/haslo-bazy
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: trening
+      POSTGRES_USER: trening
+      POSTGRES_PASSWORD_FILE: /run/secrets/haslo-bazy
+    secrets:
+      - haslo-bazy
+    volumes:
+      - dane-bazy:/var/lib/postgresql/data
+      # Schemat NIE wjeżdża sam. Zakłada go `db/zaloz.sh` po pierwszym starcie —
+      # jeden skrypt zamiast drugiej kopii migracji w katalogu initdb.
+    ports:
+      # Tylko z tego komputera (127.0.0.1) — tędy `write_training_plan.py` wgrywa
+      # plan. Z sieci baza jest niewidoczna. Zajęty port 5432 (masz już
+      # PostgreSQL)? Zmień lewą liczbę, np. "127.0.0.1:5433:5432".
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trening -d trening"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: ./app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: trening
+      DATABASE_NAME: trening
+      DATABASE_PASSWORD_FILE: /run/secrets/haslo-bazy
+    secrets:
+      - haslo-bazy
+    ports:
+      # Tylko sieć lokalna. Wystawienie na internet: docs/wdrozenie.md.
+      - "8002:8000"
+
+secrets:
+  haslo-bazy:
+    file: ./sekrety/haslo-bazy
+
+volumes:
+  dane-bazy:

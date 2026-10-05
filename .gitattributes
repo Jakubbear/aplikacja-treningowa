@@ -1,0 +1,3 @@
+# Skrypty powłoki muszą mieć końce linii LF, także po pobraniu na Windowsie —
+# z CRLF `sh db/zaloz.sh` wywala się na pierwszej linii.
+*.sh text eol=lf

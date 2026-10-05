@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block tresc %}
+
+<section class="karta naglowek-tygodnia">
+  <h1>Postęp</h1>
+  <p class="meta">wybierz ćwiczenie</p>
+</section>
+
+{% if not cwiczenia %}
+<section class="karta">
+  <p class="notka">Nie ma jeszcze zamkniętych treningów, więc nie ma czego rysować.</p>
+</section>
+{% endif %}
+
+<ol class="lista-plan">
+  {% for c in cwiczenia %}
+  <li class="karta">
+    <a href="/postep/{{ c.id }}" class="caly-wiersz">
+      <div class="wiersz-glowny">
+        <span class="nazwa">{{ c.name }}</span>
+      </div>
+      <p class="ostatnio">
+        {{ c.dni }} {% if c.dni == 1 %}dzień{% elif c.dni < 5 %}dni{% else %}dni{% endif %} ·
+        {{ c.serie }} serii · ostatnio {{ c.ostatnio.strftime('%d.%m.%Y') }}
+        {% if c.dni < 2 %}<span class="znacznik">za mało na wykres</span>{% endif %}
+      </p>
+    </a>
+  </li>
+  {% endfor %}
+</ol>
+
+{% endblock %}

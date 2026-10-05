@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_exercise-icon.html" import exercise_icon %}
+{% block tresc %}
+
+<details class="wybor-cwiczenia">
+  <summary>
+    <span class="etykieta-cwiczenia">{{ exercise_icon(cwiczenie.slug, true) }}<span>{{ cwiczenie.name }}</span></span>
+    <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5"/></svg>
+  </summary>
+  <nav>{% for c in cwiczenia %}<a href="/postep/{{ c.id }}{{ widok_query }}"><span class="etykieta-cwiczenia">{{ exercise_icon(c.slug, c.id == cwiczenie.id) }}<span>{{ c.name }}</span></span></a>{% endfor %}</nav>
+</details>
+
+<section class="karta">
+  <h1>{{ metryka|nazwa_metryki|capitalize }} trening po treningu</h1>
+  <div class="ustawienia-wykresu">
+    <span>Zakres</span>
+    <a href="/postep/{{ cwiczenie.id }}{% if not od_pomiaru %}?widok=pomiar{% endif %}"
+       class="przelacznik-wykresu{% if od_pomiaru %} wlaczony{% endif %}"
+       role="switch" aria-checked="{{ 'true' if od_pomiaru else 'false' }}">
+      <i aria-hidden="true"></i><b>Od pierwszego pomiaru</b>
+    </a>
+  </div>
+  {% if svg %}
+  <div class="ramka-wykresu">{{ svg|safe }}</div>
+  {% else %}
+  <p class="brak-danych">Brak pomiarów w treningach 1–{{ ostatni_trening }}.</p>
+  {% endif %}
+
+</section>
+
+{% if punkty %}
+<section class="podsumowanie-postepu">
+  <div><span>Start</span><strong>{{ start|kg }} {{ jednostka }}</strong></div>
+  <div><span>Teraz</span><strong>{{ teraz|kg }} {{ jednostka }}</strong></div>
+  <div class="roznica"><strong>{% if roznica is not none and roznica > 0 %}+{% endif %}{{ roznica|kg }} {{ jednostka }}</strong></div>
+</section>
+
+<section class="progresja-tygodniowa">
+  <h2>Trening po treningu</h2>
+  <ol>{% for p in punkty|reverse %}<li class="{% if loop.first %}obecnie{% endif %}"><span>Trening {{ p.nr }} · {{ p.data.strftime('%d.%m') }}</span><strong>{{ p.wartosc|kg }} {{ jednostka }}</strong>{% if loop.first %}<em>ostatni pomiar</em>{% endif %}</li>{% endfor %}</ol>
+</section>
+{% endif %}
+
+{% endblock %}

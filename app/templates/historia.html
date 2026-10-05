@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block tresc %}
+
+<section class="karta naglowek-tygodnia">
+  <h1>Historia</h1>
+  <p class="meta">{{ sesje|length }} zamkniętych treningów</p>
+</section>
+
+{% if not sesje %}
+<section class="karta">
+  <p class="notka">Nie ma jeszcze żadnego zamkniętego treningu.</p>
+</section>
+{% endif %}
+
+<ol class="lista-plan">
+  {% for s in sesje %}
+  <li class="karta trening-historia">
+    <a href="/sesja/{{ s.id }}/podsumowanie" class="caly-wiersz">
+      <div class="wiersz-glowny">
+        <span class="data">{{ s.performed_on.strftime('%d.%m.%Y') }}</span>
+        <span class="nazwa">{{ s.label or 'poza planem' }}</span>
+      </div>
+      {# Wpis bez ani jednej serii to nie błąd: tak wygląda dzień samego
+         rozciągania albo sesja wciągnięta z zewnętrznej historii. Zostaje, bo jest
+         danymi, ale nie udaje treningu siłowego — stąd warunek niżej. #}
+      {% if s.serie %}
+      <p class="plan">
+        {{ s.cwiczenia }} ćwicz. · {{ s.serie }} serii{% if s.tonaz %} · {{ s.tonaz|kg }} kg objętości{% endif %}
+        <span class="ostatnio">· {{ s.location|miejsce }}</span>
+      </p>
+      {% else %}
+      <p class="plan"><span class="znacznik">bez serii</span>
+        <span class="ostatnio">· {{ s.location|miejsce }}</span>
+      </p>
+      {% endif %}
+      {% if s.feeling %}<p class="ostatnio">{{ s.feeling }}</p>{% endif %}
+    </a>
+    {% if s.notes %}<p class="notka">{{ s.notes }}</p>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+
+{% endblock %}

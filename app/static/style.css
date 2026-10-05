@@ -1,0 +1,869 @@
+/* Mobile-first, i to dosłownie: telefon jest jedynym urządzeniem, na którym ta
+   aplikacja pracuje naprawdę. Zakładam kciuk, nie mysz — pola i przyciski mają
+   co najmniej 44 px, bo obsługa dzieje się między seriami, jedną ręką, w rękawicy
+   albo mokrą dłonią.
+
+   Układ karty ćwiczenia wg makiety z 2026-09-13. */
+
+:root {
+  --tlo: #0e1116;
+  --karta: #1a1e26;
+  --karta-obwod: #262c37;
+  --wiersz: #20252f;
+  --wiersz-obwod: #2e3541;
+  --pole: #141920;
+  --tekst: #e8ecf2;
+  --przygaszony: #8d97a6;
+  --akcent: #2f86ff;
+  --akcent-cichy: rgba(47, 134, 255, .14);
+  --ok: #3ecf8e;
+  --uwaga: #ffb454;
+  --zle: #ff5f5f;
+  --zle-cichy: rgba(255, 95, 95, .12);
+  --promien: 16px;
+  --promien-maly: 10px;
+  --dotyk: 44px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--tlo);
+  color: var(--tekst);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding-bottom: 3rem;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* --- pasek --- */
+
+.pasek {
+  display: flex;
+  align-items: baseline;
+  gap: .6rem;
+  padding: .9rem 1rem;
+  padding-top: calc(.9rem + env(safe-area-inset-top));
+  background: #0a0d12;
+  border-bottom: 1px solid var(--karta-obwod);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.pasek .wstecz { color: var(--akcent); text-decoration: none; font-weight: 600; font-size: .9rem; }
+.pasek .tytul {
+  color: var(--przygaszony);
+  font-size: .85rem;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Znacznik wersji układu — celowo widoczny na każdym ekranie, żeby nie dało się
+   zapomnieć, że to wersja do sprawdzenia, a nie docelowa. */
+.znacznik.uklad {
+  background: var(--uwaga);
+  color: #1a1200;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  flex: none;
+}
+
+main {
+  padding: 1rem;
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* --- karta --- */
+
+.karta {
+  background: var(--karta);
+  border: 1px solid var(--karta-obwod);
+  border-radius: var(--promien);
+  padding: 1rem .85rem;
+  margin-bottom: .9rem;
+}
+
+h1 { font-size: 1.3rem; margin: 0 0 .3rem; line-height: 1.25; }
+h2 { font-size: .85rem; margin: 0 0 .6rem; color: var(--przygaszony); text-transform: uppercase; letter-spacing: .05em; }
+
+.meta { color: var(--przygaszony); font-size: .85rem; margin: 0; }
+.notka { color: var(--przygaszony); font-size: .82rem; margin: .4rem 0 0; }
+
+/* Nagłówek tygodnia jest tablicą, nie akapitem: nazwa i zakres dat, wyśrodkowane.
+   Notatka planu zeszła stąd w całości — czytało się ją raz, a wisiała nad każdym
+   wejściem do aplikacji. */
+.naglowek-tygodnia { text-align: left; padding: 1.15rem .85rem; }
+.tydzien-tytul { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.naglowek-tygodnia h1 { margin: 0; font-size: 1.5rem; }
+.naglowek-tygodnia .zakres {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  margin: .45rem 0 0;
+  font-size: 1rem;
+  color: var(--tekst);
+}
+.naglowek-tygodnia .zakres::before {
+  content: "";
+  width: .9rem;
+  height: .82rem;
+  border: 1.5px solid var(--przygaszony);
+  border-radius: 2px;
+  background: linear-gradient(var(--przygaszony), var(--przygaszony)) 0 .2rem / 100% 1px no-repeat;
+  flex: none;
+}
+.licznik-cwiczen {
+  flex: none;
+  color: var(--tekst);
+  background: var(--wiersz);
+  border: 1px solid var(--wiersz-obwod);
+  border-radius: 999px;
+  padding: .35rem .6rem;
+  font-size: .8rem;
+  white-space: nowrap;
+}
+.naglowek-tygodnia .meta { font-size: .8rem; }
+
+/* Nagłówek sesji wyrównany tak samo jak tygodnia — zgłoszone w trakcie testów,
+   że rozjazd między jednym a drugim „kole w oko". Pasek stanu przeniesiony na górę,
+   bo krawędź od lewej przestaje działać przy wyśrodkowanej treści. */
+.naglowek-sesji { text-align: center; }
+.naglowek-sesji h1 { margin: 0 0 .3rem; }
+.naglowek-sesji.trwa { border-left: none; border-top: 3px solid var(--akcent); }
+.naglowek-sesji.zrobione { border-left: none; border-top: 3px solid var(--ok); }
+
+.lista-plan { list-style: none; padding: 0; margin: 0; }
+
+/* Plan tygodnia ma prowadzić prosto do treningu. Przy jedenastu ruchach jedenaście
+   osobnych kart zabiera więcej miejsca niż sama informacja, więc lista dostaje jedną
+   wspólną powierzchnię i lekkie podziały między wierszami. */
+.trening-plan { padding: 0; overflow: hidden; }
+.trening-plan .plan-item {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .65rem;
+  min-height: 3.65rem;
+  padding: .55rem .85rem;
+  border-bottom: 1px solid var(--karta-obwod);
+}
+.trening-plan .plan-item:last-child { border-bottom: 0; }
+.trening-plan .wiersz-glowny { display: contents; }
+.trening-plan .numer { grid-column: 1; grid-row: 1; }
+.trening-plan .nazwa { grid-column: 2; grid-row: 1; min-width: 0; }
+.trening-plan .plan {
+  grid-column: 3;
+  grid-row: 1;
+  margin: 0;
+  color: var(--przygaszony);
+  font-size: .9rem;
+  white-space: nowrap;
+}
+
+/* --- głowa karty ćwiczenia --- */
+
+.karta-glowa {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  padding-bottom: .85rem;
+  border-bottom: 1px solid var(--karta-obwod);
+  margin-bottom: .85rem;
+}
+.karta-glowa .nazwa {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--tekst);
+}
+
+.wiersz-glowny { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+
+.numer {
+  background: var(--wiersz);
+  border: 1px solid var(--wiersz-obwod);
+  color: var(--przygaszony);
+  border-radius: 50%;
+  width: 2rem; height: 2rem;
+  display: grid; place-items: center;
+  font-size: .85rem; font-weight: 600;
+  flex: none;
+}
+.nazwa { font-weight: 600; }
+
+.znaczniki { margin: 0 0 .7rem; }
+.znacznik {
+  display: inline-block;
+  font-size: .72rem;
+  background: var(--wiersz);
+  color: var(--przygaszony);
+  padding: .2rem .5rem;
+  border-radius: 999px;
+}
+.znacznik.ponad { background: rgba(255, 180, 84, .18); color: var(--uwaga); }
+
+/* --- przyciski ikonowe i rozwijane panele --- */
+
+.ikona {
+  flex: none;
+  width: var(--dotyk);
+  height: var(--dotyk);
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid var(--wiersz-obwod);
+  border-radius: 12px;
+  color: var(--akcent);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  list-style: none;
+}
+.ikona::-webkit-details-marker { display: none; }
+.ikona.kasuj { color: var(--zle); border-color: rgba(255, 95, 95, .35); }
+.ikona.potwierdz { color: var(--ok); border-color: rgba(62, 207, 142, .4); font-size: 1.25rem; }
+.ikona:active { background: var(--akcent-cichy); }
+.ikona.nieczynna { color: var(--wiersz-obwod); border-color: var(--wiersz-obwod); cursor: default; }
+
+/* Panel podmiany: blok w normalnym przepływie, rozwijany zaznaczeniem pola.
+   Poprzednia wersja była nakładką (`position: absolute`) chowaną przez
+   `display: none` — i WebKit na iPhonie nie odrysowywał obszaru po zamknięciu,
+   więc panel zostawał na ekranie jako duch, wymieszany z treścią pod spodem.
+   Blok w przepływie zmienia wysokość karty, więc przeliczenie układu jest
+   wymuszone i artefakt nie ma jak powstać. */
+.przelacznik-zamiany:not(:checked) ~ .panel-zamiany { display: none; }
+.przelacznik-zamiany:checked ~ .karta-glowa .ikona-zamiany {
+  background: var(--akcent);
+  border-color: var(--akcent);
+  color: #041226;
+}
+.przelacznik-zamiany:focus-visible ~ .karta-glowa .ikona-zamiany {
+  outline: 2px solid var(--akcent);
+  outline-offset: 2px;
+}
+.panel-zamiany {
+  background: var(--wiersz);
+  border: 1px solid var(--wiersz-obwod);
+  border-radius: var(--promien-maly);
+  padding: .8rem;
+  margin-bottom: .85rem;
+}
+
+.cwiczenie { position: relative; }
+
+/* Formularz podmiany to kolumna, nie wiersz serii: `Zamiast tego robię` i `Dlaczego`
+   potrzebują pełnej szerokości, a nie kawałka rzędu obok pola ciężaru. */
+.wiersz-serii.podmiana { display: block; }
+.wiersz-serii.podmiana .pola-para { display: flex; gap: .45rem; }
+
+.panel .plan { margin: 0 0 .3rem; font-size: 1rem; }
+.plan { margin: .5rem 0 .2rem; font-size: 1.05rem; }
+.ostatnio { color: var(--przygaszony); font-size: .85rem; margin: 0; }
+.ostatnio.brak { font-style: italic; }
+
+/* --- tryb poprawiania (ołówek) --- */
+
+/* Zapisana seria jest domyślnie faktem do przeczytania, nie polem do wypełnienia.
+   Dopiero ołówek odsłania edycję ciężaru, powtórzeń i kosze. Bez tego karta z sześcioma
+   polami tekstowymi zachęca do dotknięcia czegoś, czego się nie chciało ruszać —
+   a w środku treningu to kosztuje wpis w historii, nie chwilę. */
+
+.przelacznik-edycji,
+.przelacznik-zamiany {
+  /* niewidoczne, ale wciąż osiągalne klawiaturą */
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  pointer-events: none;
+}
+.przelacznik-edycji:checked ~ .karta-glowa .ikona-edycji {
+  background: var(--akcent);
+  border-color: var(--akcent);
+  color: #041226;
+}
+.przelacznik-edycji:focus-visible ~ .karta-glowa .ikona-edycji {
+  outline: 2px solid var(--akcent);
+  outline-offset: 2px;
+}
+
+/* Poza trybem edycji: serie zapisane czytają się jak tekst. `pointer-events: none`
+   zamiast `readonly`, bo atrybutu nie da się przełączyć samym CSS-em. */
+.przelacznik-edycji:not(:checked) ~ .serie .zapisana input {
+  pointer-events: none;
+  background: transparent;
+  border-color: transparent;
+  padding-left: 0;
+}
+.przelacznik-edycji:not(:checked) ~ .serie .zapisana .jedn { right: auto; left: 2.2rem; }
+.przelacznik-edycji:not(:checked) ~ .serie .zapisana .akcja,
+.przelacznik-edycji:not(:checked) ~ .serie .zapisana .zapisz { display: none; }
+
+/* W trybie edycji widać, że karta jest „otwarta" — inaczej łatwo w nim zostać. */
+.przelacznik-edycji:checked ~ .serie .zapisana { border-color: var(--akcent); }
+
+/* --- wiersz serii --- */
+
+.serie { list-style: none; padding: 0; margin: 0; }
+
+.serie > .wiersz {
+  background: var(--wiersz);
+  border: 1px solid var(--wiersz-obwod);
+  border-radius: var(--promien-maly);
+  padding: .6rem .65rem;
+  margin-bottom: .55rem;
+  display: flex;
+  align-items: flex-end;
+  gap: .45rem;
+  flex-wrap: wrap;
+}
+/* Zrobione widać z odległości wyciągniętej ręki: zielona krawędź od lewej. */
+.serie > .wiersz.zapisana { border-left: 3px solid var(--ok); }
+.serie > .wiersz.planowana { opacity: .82; }
+.serie > .wiersz.zapisano { border-color: var(--ok); }
+.serie > .wiersz.blad-zapisu { border-color: var(--zle); background: var(--zle-cichy); }
+/* Zapis w drodze: haczyk przygasa, żeby drugi stuk nie wyglądał na potrzebny. */
+.w-locie button[type=submit] { opacity: .45; }
+.notka-sieci { color: var(--zle); width: 100%; }
+
+.wiersz-serii {
+  display: flex;
+  align-items: flex-end;
+  gap: .45rem;
+  flex: 1;
+  min-width: 0;
+  /* Bez zawijania pole przerwy nie schodziło do własnej linii, tylko ściskało
+     ciężar i powtórzenia do zera — etykiety nachodziły wtedy na siebie. */
+  flex-wrap: wrap;
+}
+.wiersz .akcja { flex: none; }
+/* Notatka pod serią („zamiast: …") jest wierszem osobnym, nie kolejnym elementem
+   w rzędzie. Bez tego zabierała szerokość polom ciężaru i powtórzeń — etykiety
+   nachodziły na siebie, a wartość ściskała się do jednego znaku. */
+.wiersz > .notka { flex-basis: 100%; width: 100%; margin-top: .5rem; }
+
+.nr-serii {
+  flex: none;
+  align-self: center;
+  min-width: 4.1rem;
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--tekst);
+}
+
+.pole { display: block; flex: 1; min-width: 0; margin: 0; }
+.pole.szeroki { flex-basis: 100%; margin-bottom: .6rem; }
+.etykieta {
+  display: block;
+  font-size: .72rem;
+  color: var(--przygaszony);
+  margin-bottom: .25rem;
+}
+.wejscie { position: relative; display: block; min-width: 0; }
+.wejscie .jedn {
+  position: absolute;
+  right: .55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--przygaszony);
+  font-size: .8rem;
+  pointer-events: none;
+}
+
+label { display: block; font-size: .8rem; color: var(--przygaszony); margin-bottom: .5rem; }
+
+input[type="text"], input[type="number"], select {
+  width: 100%;
+  min-height: var(--dotyk);
+  padding: .55rem 2rem .55rem .6rem;
+  font-size: 1.05rem;
+  background: var(--pole);
+  color: var(--tekst);
+  border: 1px solid var(--wiersz-obwod);
+  border-radius: 8px;
+  -moz-appearance: textfield;
+}
+input[type="number"] { padding-right: .6rem; }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input:focus, select:focus { outline: 2px solid var(--akcent); outline-offset: 1px; }
+select { padding-right: .6rem; margin-top: .25rem; }
+.wejscie select { margin-top: 0; }
+
+.pola { display: flex; gap: .6rem; }
+.pola label { flex: 1; }
+.pola-para { display: flex; gap: .45rem; margin-bottom: .6rem; }
+
+/* --- przyciski --- */
+
+button { font: inherit; border: none; border-radius: 8px; cursor: pointer; }
+button[hidden] { display: none; }
+
+button.glowny {
+  width: 100%;
+  min-height: var(--dotyk);
+  padding: .85rem;
+  margin-top: .6rem;
+  background: var(--akcent);
+  color: #041226;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+button.konczacy { background: var(--ok); }
+button.drobny {
+  padding: .55rem .7rem;
+  min-height: var(--dotyk);
+  background: var(--wiersz-obwod);
+  color: var(--tekst);
+  font-size: .85rem;
+  flex: none;
+}
+
+/* „▶ Robię teraz" — cała szerokość pod nagłówkiem karty, bo trafia się w nią
+   kciukiem w biegu, między seriami; ikona w rzędzie obok ⇄ i ✎ byłaby za mała. */
+.robie-teraz { margin: 0 0 .7rem; }
+.robie-teraz button { width: 100%; }
+
+/* „+ Dodaj serię" — obrys, nie plama: to ruch wyjątkowy, nie główny. */
+.dodatkowa { margin: .2rem 0 .9rem; }
+.dodatkowa .przycisk-wiersz {
+  list-style: none;
+  display: block;
+  text-align: center;
+  min-height: var(--dotyk);
+  padding: .75rem;
+  border: 1px solid var(--akcent);
+  border-radius: var(--promien-maly);
+  color: var(--akcent);
+  font-weight: 600;
+  cursor: pointer;
+}
+.dodatkowa .przycisk-wiersz::-webkit-details-marker { display: none; }
+.dodatkowa[open] .przycisk-wiersz { border-color: var(--wiersz-obwod); color: var(--przygaszony); }
+.dodatkowa:not([open]) .wiersz-serii { display: none; }
+.dodatkowa[open] .wiersz-serii {
+  background: var(--wiersz);
+  border: 1px solid var(--wiersz-obwod);
+  border-radius: var(--promien-maly);
+  padding: .6rem .65rem;
+  margin-top: .55rem;
+  flex-wrap: wrap;
+}
+
+/* --- ból i intensywność --- */
+
+.odczucie {
+  border-top: 1px solid var(--karta-obwod);
+  padding-top: .85rem;
+  margin-top: .2rem;
+}
+
+/* „nie" i „tak" stoją OBOK SIEBIE, oba widoczne, „tak" po prawej.
+   Poprzednia wersja pokazywała tylko bieżącą odpowiedź i podmieniała napis po
+   dotknięciu — zgłoszone w testach: nie widać wtedy, że to jest w ogóle do
+   naciśnięcia: „jakbym tego nie nacisnął, kazałbym ci to poprawić". */
+.radio-nie,
+.radio-tak {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  pointer-events: none;
+}
+.pytanie-bolu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+  margin-bottom: .6rem;
+}
+.pytanie-bolu .etykieta { margin: 0; }
+
+.tak-nie {
+  flex: none;
+  display: flex;
+  gap: .3rem;
+}
+.tak-nie label {
+  min-width: 3.6rem;
+  min-height: var(--dotyk);
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0 .8rem;
+  border: 1px solid var(--wiersz-obwod);
+  border-radius: 999px;
+  color: var(--przygaszony);
+  font-size: .95rem;
+  cursor: pointer;
+}
+/* Kolor tylko przy „tak": to jedyne pole w karcie, które ma trafić do lekarza,
+   a nie do programu treningowego. „nie" zostaje spokojne. */
+.radio-nie:checked ~ .pytanie-bolu .opcja-nie {
+  border-color: var(--przygaszony);
+  color: var(--tekst);
+  font-weight: 700;
+}
+.radio-tak:checked ~ .pytanie-bolu .opcja-tak {
+  border-color: var(--uwaga);
+  color: var(--uwaga);
+  font-weight: 700;
+}
+.radio-nie:focus-visible ~ .pytanie-bolu .opcja-nie,
+.radio-tak:focus-visible ~ .pytanie-bolu .opcja-tak {
+  outline: 2px solid var(--akcent);
+  outline-offset: 2px;
+}
+.radio-tak:not(:checked) ~ .pole-bolu { display: none; }
+.odczucie.zapisano { border-top-color: var(--ok); }
+.odczucie.blad-zapisu { border-top-color: var(--zle); }
+
+.wysilek { border: none; padding: 0; margin: 0; min-width: 0; }
+.wysilek legend { padding: 0; }
+
+/* Pięć stopni zamiast dziesięciu. Słupek rośnie i przechodzi z zieleni w czerwień,
+   więc stopień odczytuje się wzrokiem, a nie czytaniem cyfry — a każde pole ma
+   na 390 px ok. 65 px zamiast 30, czyli realny cel dla kciuka. */
+.skala {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: .3rem;
+  align-items: end;
+}
+.skala input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.skala label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .35rem;
+  min-width: 0;
+  min-height: 4.4rem;
+  margin: 0;
+  padding: .4rem .2rem .45rem;
+  border: 1px solid var(--wiersz-obwod);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.skala .slupek {
+  display: block;
+  width: 100%;
+  border-radius: 3px;
+  background: var(--wiersz-obwod);
+}
+/* Wysokość słupka niesie stopień, kolor niesie jego cenę — i oba działają, zanim
+   cokolwiek wybierzesz. Skala przygaszona, ale już zielono-czerwona, czyta się
+   jednym spojrzeniem; zaznaczenie tylko rozjaśnia to, co i tak widać. */
+.skala .stopien-1 { --stopien: #3ecf8e; }
+.skala .stopien-2 { --stopien: #9ad13c; }
+.skala .stopien-3 { --stopien: #ffc531; }
+.skala .stopien-4 { --stopien: #ff9036; }
+.skala .stopien-5 { --stopien: #ff5f5f; }
+
+.skala .stopien-1 .slupek { height: .35rem; }
+.skala .stopien-2 .slupek { height: .8rem; }
+.skala .stopien-3 .slupek { height: 1.35rem; }
+.skala .stopien-4 .slupek { height: 2rem; }
+.skala .stopien-5 .slupek { height: 2.75rem; }
+
+.skala .slupek { background: var(--stopien); opacity: .32; }
+
+.skala .opis {
+  font-size: .62rem;
+  line-height: 1.1;
+  color: var(--przygaszony);
+  text-align: center;
+}
+
+.skala input[type="radio"]:checked + label {
+  border-color: var(--stopien);
+  background: color-mix(in srgb, var(--stopien) 14%, transparent);
+}
+.skala input[type="radio"]:checked + label .slupek { opacity: 1; }
+.skala input[type="radio"]:checked + label .opis { color: var(--tekst); font-weight: 700; }
+.skala input[type="radio"]:focus-visible + label { outline: 2px solid var(--akcent); outline-offset: 2px; }
+
+/* --- pozostałe listy --- */
+
+.serie.proste { margin: .6rem 0; }
+.serie.proste > li {
+  display: block;
+  padding: .5rem 0;
+  border-top: 1px solid var(--karta-obwod);
+}
+
+.odchylenia { list-style: none; padding: 0; margin: 0; }
+.odchylenia > li {
+  padding: .6rem 0 .6rem .7rem;
+  border-left: 3px solid var(--karta-obwod);
+  margin-bottom: .4rem;
+}
+.odchylenia > li.zgodne { border-left-color: var(--ok); }
+.odchylenia > li.inne { border-left-color: var(--uwaga); }
+.odchylenia > li.pominiete { border-left-color: var(--zle); }
+.ocena { display: block; color: var(--przygaszony); font-size: .88rem; }
+
+.stopka { text-align: center; }
+.stopka { margin-top: 1.2rem; }
+.stopka a { color: var(--akcent); text-decoration: none; }
+.stopka a.przycisk-wiersz {
+  display: block;
+  min-height: var(--dotyk);
+  padding: .85rem;
+  border: 1px solid var(--akcent);
+  border-radius: var(--promien-maly);
+  font-weight: 700;
+}
+
+/* Wąskie telefony: wiersz serii rozpada się na dwa piętra zamiast ściskać pola
+   poniżej czytelności. */
+@media (max-width: 360px) {
+  .nr-serii { min-width: 100%; margin-bottom: .35rem; }
+}
+
+/* --- pasek zakładek na dole --- */
+
+/* Na dole, nie na górze: obsługa dzieje się kciukiem jednej ręki, a dół ekranu
+   to jedyne miejsce, do którego kciuk sięga bez przekładania telefonu. */
+.zakladki {
+  position: fixed;
+  left: 50%;
+  width: calc(100% - 1.5rem);
+  max-width: 616px;
+  transform: translateX(-50%);
+  bottom: max(.75rem, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: rgba(20, 25, 32, .96);
+  border: 1px solid var(--wiersz-obwod);
+  border-radius: 24px;
+  padding: .35rem;
+  z-index: 10;
+}
+.zakladki a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .22rem;
+  min-height: 3.8rem;
+  color: var(--przygaszony);
+  text-decoration: none;
+  font-size: .72rem;
+}
+.zakladki a.wybrana { color: var(--tekst); font-weight: 700; }
+.zakladki .ikonka { width: 1.45rem; height: 1.45rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.zakladki a.wybrana .ikonka { background: var(--akcent); color: #061323; border-radius: 50%; box-sizing: content-box; padding: .45rem; }
+
+/* Pasek zasłaniałby koniec treści — stąd zapas na dole strony. */
+body { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+
+/* --- historia --- */
+
+.caly-wiersz { display: block; color: inherit; text-decoration: none; }
+.trening-historia .data { font-weight: 700; font-size: 1.05rem; }
+.trening-historia .nazwa { color: var(--przygaszony); font-weight: 400; font-size: .9rem; }
+
+/* --- wykres --- */
+
+.ramka-wykresu { margin: .35rem 0 0; }
+.wykres { width: 100%; height: auto; display: block; overflow: visible; }
+.wykres .siatka { stroke: var(--wiersz-obwod); stroke-width: 1; }
+.wykres .linia {
+  fill: none;
+  stroke: var(--akcent);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.wykres .kropka { fill: var(--akcent); stroke: var(--karta); stroke-width: 2; }
+/* Punkt policzony z długiej serii jest oszacowaniem naciąganym — pusty środek
+   mówi „to jest mniej pewne" bez dopisywania gwiazdki przy każdej liczbie. */
+.wykres .kropka.niepewna { fill: var(--karta); stroke: var(--akcent); stroke-width: 2.5; }
+.wykres .etykieta-svg { fill: var(--przygaszony); font-size: 11px; font-family: inherit; }
+.wykres .etykieta-svg.os { font-size: 10px; text-anchor: start; }
+.wykres .etykieta-svg.os-y { font-size: 10px; }
+.wykres .etykieta-svg.jednostka { fill: var(--tekst); font-size: 11px; font-weight: 700; }
+
+.metryki { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .4rem; }
+.metryki .metryka {
+  flex: 1 1 auto;
+  min-height: var(--dotyk);
+  display: grid;
+  place-items: center;
+  padding: 0 .7rem;
+  border: 1px solid var(--wiersz-obwod);
+  border-radius: 999px;
+  color: var(--przygaszony);
+  text-decoration: none;
+  font-size: .85rem;
+}
+.metryki .metryka.wybrana {
+  border-color: var(--akcent);
+  color: var(--akcent);
+  font-weight: 700;
+}
+
+/* --- postęp tygodniowy --- */
+
+.wybor-cwiczenia { margin: 0 0 .9rem; }
+.wybor-cwiczenia summary {
+  min-height: var(--dotyk);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  padding: .8rem .9rem;
+  background: var(--karta);
+  border: 1px solid var(--karta-obwod);
+  border-radius: var(--promien);
+  color: var(--tekst);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.wybor-cwiczenia summary > span { min-width: 0; }
+.etykieta-cwiczenia { display: flex; align-items: center; gap: .7rem; min-width: 0; }
+.etykieta-cwiczenia > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ikona-cwiczenia { width: 1.75rem; height: 1.75rem; flex: none; fill: none; stroke: var(--przygaszony); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ikona-cwiczenia.wybrana { stroke: var(--akcent); }
+.wybor-cwiczenia .chevron { width: 1.25rem; height: 1.25rem; margin-left: auto; flex: none; fill: none; stroke: var(--przygaszony); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .18s ease; }
+.wybor-cwiczenia[open] .chevron { transform: rotate(180deg); }
+.wybor-cwiczenia summary::-webkit-details-marker { display: none; }
+.wybor-cwiczenia nav { margin-top: .35rem; border: 1px solid var(--karta-obwod); border-radius: var(--promien); overflow: hidden; }
+.wybor-cwiczenia nav a { display: block; padding: .7rem .9rem; color: var(--tekst); text-decoration: none; border-bottom: 1px solid var(--karta-obwod); }
+.wybor-cwiczenia nav a:last-child { border-bottom: 0; }
+.ustawienia-wykresu { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin: .75rem 0 .25rem; color: var(--przygaszony); font-size: .76rem; }
+.przelacznik-wykresu { display: inline-flex; align-items: center; gap: .5rem; color: var(--przygaszony); text-decoration: none; }
+.przelacznik-wykresu i { position: relative; width: 2.1rem; height: 1.2rem; flex: none; border-radius: 999px; background: var(--wiersz-obwod); transition: background .18s ease; }
+.przelacznik-wykresu i::after { content: ""; position: absolute; top: .17rem; left: .18rem; width: .86rem; height: .86rem; border-radius: 50%; background: var(--przygaszony); transition: transform .18s ease, background .18s ease; }
+.przelacznik-wykresu b { font-weight: 600; }
+.przelacznik-wykresu.wlaczony { color: var(--tekst); }
+.przelacznik-wykresu.wlaczony i { background: var(--akcent); }
+.przelacznik-wykresu.wlaczony i::after { background: white; transform: translateX(.86rem); }
+.brak-danych { min-height: 9rem; display: grid; place-items: center; margin: 0; color: var(--przygaszony); text-align: center; }
+.podsumowanie-postepu { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin: 0 0 1.2rem; }
+.podsumowanie-postepu > div { min-height: 4.5rem; padding: .65rem; background: var(--karta); border: 1px solid var(--karta-obwod); border-radius: var(--promien-maly); }
+.podsumowanie-postepu span { display: block; color: var(--przygaszony); font-size: .78rem; }
+.podsumowanie-postepu strong { display: block; margin-top: .15rem; font-size: 1.15rem; }
+.podsumowanie-postepu .roznica { display: grid; place-items: center; }
+.podsumowanie-postepu .roznica strong { color: var(--akcent); font-size: 1.25rem; }
+.progresja-tygodniowa { margin: 0 0 1rem; }
+.progresja-tygodniowa h2 { margin-bottom: .7rem; color: var(--tekst); font-size: 1.15rem; text-transform: none; letter-spacing: 0; }
+.progresja-tygodniowa ol { list-style: none; margin: 0; padding: 0 0 0 1rem; border-left: 2px solid var(--wiersz-obwod); }
+.progresja-tygodniowa li { position: relative; display: flex; align-items: center; gap: .65rem; min-height: 3.15rem; margin: 0 0 .45rem .75rem; padding: .55rem .7rem; background: var(--karta); border: 1px solid var(--karta-obwod); border-radius: var(--promien-maly); }
+.progresja-tygodniowa li::before { content: ""; position: absolute; left: -1.42rem; width: .75rem; height: .75rem; background: var(--przygaszony); border-radius: 50%; }
+.progresja-tygodniowa li span { color: var(--przygaszony); min-width: 4.6rem; }
+.progresja-tygodniowa li strong { font-size: 1.2rem; }
+.progresja-tygodniowa li em { margin-left: auto; padding: .2rem .5rem; border-radius: 999px; background: var(--akcent-cichy); color: var(--akcent); font-size: .75rem; font-style: normal; }
+.progresja-tygodniowa li.obecnie { border-color: var(--akcent); }
+.progresja-tygodniowa li.obecnie::before { background: var(--akcent); }
+
+/* Oddziela wybór miejsca od końca listy, szczególnie przy 11. ćwiczeniu. */
+.trening-plan { margin-bottom: 1.35rem; }
+
+.ostrzezenie {
+  border-left: 3px solid var(--uwaga);
+  padding-left: .6rem;
+  margin-top: .8rem;
+}
+
+.os-opis { display: flex; align-items: center; gap: .4rem; margin: .1rem 0 .2rem; }
+.trening-historia .plan { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+
+/* Przerwa zajmuje własną linię w wierszu serii — trzy pola obok siebie nie
+   mieszczą się na 390 px w rozmiarze, w który da się trafić kciukiem. */
+.pole.przerwa { flex-basis: 100%; margin-top: .5rem; }
+.pole.przerwa .etykieta { font-size: .68rem; }
+.pole.przerwa input { min-height: 2.4rem; font-size: .95rem; padding-right: 1.6rem; }
+.pole.przerwa .jedn { right: .5rem; }
+
+/* --- tydzień jako jednostka ---
+   Strzałki po bokach zakresu dat: kciukiem w róg, nie w środek. Pole dotyku 44 px. */
+.nawigacja-tygodni { display: flex; align-items: center; gap: .5rem; padding: .8rem .55rem; }
+.nawigacja-tygodni .srodek { flex: 1; min-width: 0; text-align: center; }
+.nawigacja-tygodni h1 { margin: 0; font-size: 1.5rem; }
+.nawigacja-tygodni .opis-tygodnia { display: block; margin: .2rem 0 0; color: var(--przygaszony); font-size: .85rem; text-decoration: none; }
+.nawigacja-tygodni .opis-tygodnia.wroc { color: var(--akcent); }
+.strzalka {
+  flex: none;
+  display: grid; place-items: center;
+  width: var(--dotyk); height: var(--dotyk);
+  border-radius: 50%;
+  background: var(--wiersz);
+  border: 1px solid var(--wiersz-obwod);
+  color: var(--tekst);
+}
+.strzalka svg, .wykonany .dalej { width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.wykonany { display: flex; align-items: center; gap: .75rem; color: var(--tekst); text-decoration: none; border-left: 3px solid var(--ok); }
+.wykonany.w-toku { border-left-color: var(--akcent); }
+.wykonany .znak {
+  flex: none; display: grid; place-items: center;
+  width: 2rem; height: 2rem; border-radius: 50%;
+  background: rgba(62, 207, 142, .15); color: var(--ok); font-weight: 700;
+}
+.wykonany.w-toku .znak { background: var(--akcent-cichy); color: var(--akcent); }
+.wykonany .opis { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .15rem; }
+.wykonany .meta { color: var(--przygaszony); font-size: .85rem; }
+.wykonany .dalej { color: var(--przygaszony); flex: none; }
+
+.dodaj-trening {
+  display: flex; align-items: center; justify-content: center; gap: .55rem;
+  min-height: 3.4rem;
+  background: transparent;
+  border: 1.5px dashed var(--wiersz-obwod);
+  color: var(--akcent); font-weight: 600; text-decoration: none;
+}
+.dodaj-trening .plus {
+  display: grid; place-items: center;
+  width: 1.8rem; height: 1.8rem; border-radius: 50%;
+  background: var(--akcent); color: #041226; font-size: 1.3rem; line-height: 1;
+}
+.naglowek-treningu h2 { margin: 0; font-size: 1.5rem; text-transform: none; letter-spacing: 0; color: var(--tekst); }
+.naglowek-treningu .notka { margin-top: .45rem; }
+
+/* Znacznik serii łączonej w liście planu trafiał do kolumny numeru (2 rem)
+   i zawijał się w kółko — dostaje własny wiersz pod nazwą. */
+.trening-plan .znaczniki { grid-column: 2 / -1; grid-row: 2; margin: -.35rem 0 0; }
+
+/* --- mini-kalendarz w karcie dat ---
+   Mały, bo to orientacja, nie wybór dnia. Wiersz tygodnia ma 1,6 rem wysokości —
+   mniej niż 44 px, ale skok strzałkami zostaje głównym sposobem nawigacji. */
+.daty { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.daty-tekst { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; }
+.daty-tekst h2 { margin: 0; font-size: 1.5rem; text-transform: none; letter-spacing: 0; color: var(--tekst); }
+.mini-kal { flex: none; font-size: .68rem; line-height: 1; color: var(--tekst); }
+.mk-mies { color: var(--przygaszony); margin: 0 0 .35rem .2rem; font-size: .72rem; }
+.mk-wiersz { display: grid; grid-template-columns: repeat(7, 1.35rem); height: 1.45rem; align-items: center; text-align: center; color: inherit; text-decoration: none; border-radius: 999px; }
+.mk-naglowek { color: var(--przygaszony); height: 1.2rem; font-size: .6rem; }
+.mk-wiersz .obcy { color: #4d5563; }
+.mk-wiersz .dzis { font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.mk-wiersz.wybrany { background: var(--uwaga); color: #1a1205; font-weight: 700; }
+.mk-wiersz.wybrany .obcy { color: rgba(26, 18, 5, .55); }
+
+/* „Idzie w górę" w wolnym miejscu obok kalendarza. */
+.daty-prawo { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-end; gap: .7rem; }
+.podbicie { align-self: stretch; }
+.podbicie h3 { margin: 0 0 .35rem; font-size: .72rem; font-weight: 600; color: var(--przygaszony); text-transform: uppercase; letter-spacing: .04em; }
+.podbicie p { margin: 0 0 .4rem; font-size: .82rem; line-height: 1.3; }
+.podbicie .strzalka-gora { color: var(--ok); font-weight: 700; }
+.podbicie .kg-pod { display: block; color: var(--przygaszony); padding-left: 1rem; }
+.podbicie .kg-pod strong { color: var(--ok); }
