@@ -6,21 +6,22 @@
    Układ karty ćwiczenia wg makiety z 2026-09-13. */
 
 :root {
-  --tlo: #0e1116;
-  --karta: #1a1e26;
-  --karta-obwod: #262c37;
-  --wiersz: #20252f;
-  --wiersz-obwod: #2e3541;
-  --pole: #141920;
-  --tekst: #e8ecf2;
-  --przygaszony: #8d97a6;
-  --akcent: #2f86ff;
-  --akcent-cichy: rgba(47, 134, 255, .14);
-  --ok: #3ecf8e;
+  --tlo: #141210;
+  --karta: #211e1a;
+  --karta-obwod: #3c352d;
+  --wiersz: #2b2620;
+  --wiersz-obwod: #4a4035;
+  --pole: #191612;
+  --tekst: #f6f0e5;
+  --przygaszony: #c2b6a3;
+  --akcent: #e4c58d;
+  --zrobione: #c7c6ba;
+  --zrobione-cichy: rgba(199, 198, 186, .15);
   --uwaga: #ffb454;
   --zle: #ff5f5f;
+  --akcent-cichy: rgba(228, 197, 141, .13);
   --zle-cichy: rgba(255, 95, 95, .12);
-  --promien: 16px;
+  --promien: 18px;
   --promien-maly: 10px;
   --dotyk: 44px;
 }
@@ -135,7 +136,7 @@ h2 { font-size: .85rem; margin: 0 0 .6rem; color: var(--przygaszony); text-trans
 .naglowek-sesji { text-align: center; }
 .naglowek-sesji h1 { margin: 0 0 .3rem; }
 .naglowek-sesji.trwa { border-left: none; border-top: 3px solid var(--akcent); }
-.naglowek-sesji.zrobione { border-left: none; border-top: 3px solid var(--ok); }
+.naglowek-sesji.zrobione { border-left: none; border-top: 3px solid var(--zrobione); }
 
 .lista-plan { list-style: none; padding: 0; margin: 0; }
 
@@ -231,7 +232,7 @@ h2 { font-size: .85rem; margin: 0 0 .6rem; color: var(--przygaszony); text-trans
 }
 .ikona::-webkit-details-marker { display: none; }
 .ikona.kasuj { color: var(--zle); border-color: rgba(255, 95, 95, .35); }
-.ikona.potwierdz { color: var(--ok); border-color: rgba(62, 207, 142, .4); font-size: 1.25rem; }
+.ikona.potwierdz { color: var(--zrobione); border-color: var(--zrobione); font-size: 1.25rem; }
 .ikona:active { background: var(--akcent-cichy); }
 .ikona.nieczynna { color: var(--wiersz-obwod); border-color: var(--wiersz-obwod); cursor: default; }
 
@@ -329,9 +330,9 @@ h2 { font-size: .85rem; margin: 0 0 .6rem; color: var(--przygaszony); text-trans
   flex-wrap: wrap;
 }
 /* Zrobione widać z odległości wyciągniętej ręki: zielona krawędź od lewej. */
-.serie > .wiersz.zapisana { border-left: 3px solid var(--ok); }
+.serie > .wiersz.zapisana { border-left: 3px solid var(--zrobione); }
 .serie > .wiersz.planowana { opacity: .82; }
-.serie > .wiersz.zapisano { border-color: var(--ok); }
+.serie > .wiersz.zapisano { border-color: var(--zrobione); }
 .serie > .wiersz.blad-zapisu { border-color: var(--zle); background: var(--zle-cichy); }
 /* Zapis w drodze: haczyk przygasa, żeby drugi stuk nie wyglądał na potrzebny. */
 .w-locie button[type=submit] { opacity: .45; }
@@ -420,7 +421,7 @@ button.glowny {
   font-weight: 700;
   font-size: 1.05rem;
 }
-button.konczacy { background: var(--ok); }
+button.konczacy { background: var(--zrobione); }
 button.drobny {
   padding: .55rem .7rem;
   min-height: var(--dotyk);
@@ -527,7 +528,7 @@ button.drobny {
   outline-offset: 2px;
 }
 .radio-tak:not(:checked) ~ .pole-bolu { display: none; }
-.odczucie.zapisano { border-top-color: var(--ok); }
+.odczucie.zapisano { border-top-color: var(--zrobione); }
 .odczucie.blad-zapisu { border-top-color: var(--zle); }
 
 .wysilek { border: none; padding: 0; margin: 0; min-width: 0; }
@@ -615,7 +616,7 @@ button.drobny {
   border-left: 3px solid var(--karta-obwod);
   margin-bottom: .4rem;
 }
-.odchylenia > li.zgodne { border-left-color: var(--ok); }
+.odchylenia > li.zgodne { border-left-color: var(--zrobione); }
 .odchylenia > li.inne { border-left-color: var(--uwaga); }
 .odchylenia > li.pominiete { border-left-color: var(--zle); }
 .ocena { display: block; color: var(--przygaszony); font-size: .88rem; }
@@ -813,12 +814,12 @@ body { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
 }
 .strzalka svg, .wykonany .dalej { width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-.wykonany { display: flex; align-items: center; gap: .75rem; color: var(--tekst); text-decoration: none; border-left: 3px solid var(--ok); }
+.wykonany { display: flex; align-items: center; gap: .75rem; color: var(--tekst); text-decoration: none; border-left: 3px solid var(--zrobione); }
 .wykonany.w-toku { border-left-color: var(--akcent); }
 .wykonany .znak {
   flex: none; display: grid; place-items: center;
   width: 2rem; height: 2rem; border-radius: 50%;
-  background: rgba(62, 207, 142, .15); color: var(--ok); font-weight: 700;
+  background: var(--zrobione-cichy); color: var(--zrobione); font-weight: 700;
 }
 .wykonany.w-toku .znak { background: var(--akcent-cichy); color: var(--akcent); }
 .wykonany .opis { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .15rem; }
@@ -864,6 +865,77 @@ body { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
 .podbicie { align-self: stretch; }
 .podbicie h3 { margin: 0 0 .35rem; font-size: .72rem; font-weight: 600; color: var(--przygaszony); text-transform: uppercase; letter-spacing: .04em; }
 .podbicie p { margin: 0 0 .4rem; font-size: .82rem; line-height: 1.3; }
-.podbicie .strzalka-gora { color: var(--ok); font-weight: 700; }
+.podbicie .strzalka-gora { color: var(--zrobione); font-weight: 700; }
 .podbicie .kg-pod { display: block; color: var(--przygaszony); padding-left: 1rem; }
-.podbicie .kg-pod strong { color: var(--ok); }
+.podbicie .kg-pod strong { color: var(--zrobione); }
+
+/* Korekty wizualne i czytelność; bez zmiany układu ani kolejności kontrolek. */
+:root { color-scheme: dark; }
+body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
+input, select, textarea, button { font-family: inherit; font-variant-numeric: tabular-nums; }
+input::placeholder, textarea::placeholder { color: var(--przygaszony); opacity: 1; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--akcent); }
+.pasek { background: var(--tlo); }
+.zakladki { background: var(--karta); box-shadow: 0 8px 28px #00000055; }
+.serie > .wiersz.planowana { opacity: 1; }
+.pole.przerwa input { min-height: var(--dotyk); }
+.pasek .wstecz { min-height: var(--dotyk); align-content: center; }
+.wiersz-serii input[type="text"], .wiersz-serii input[type="number"] { font-size: 1.5rem; font-weight: 750; letter-spacing: -.025em; }
+.pole.przerwa input { font-size: 1rem; font-weight: 600; letter-spacing: 0; }
+.skala-zapasu label { font-size: 1.15rem; font-weight: 750; }
+.skala-zapasu input[type="radio"]:checked + label { background: var(--akcent-cichy); border-color: var(--akcent); color: var(--tekst); }
+.ikona.potwierdz { color: var(--zrobione); border-color: var(--zrobione); }
+.ikona.kasuj { border-color: var(--zle); }
+.ikona.nieczynna { color: var(--przygaszony); }
+.ikona, button, .skala label, input[type="text"], input[type="number"], select, .pole-notatki textarea { border-radius: var(--promien-maly); }
+button.glowny, .zakladki a.wybrana .ikonka,
+.przelacznik-edycji:checked ~ .karta-glowa .ikona-edycji,
+.przelacznik-zamiany:checked ~ .karta-glowa .ikona-zamiany { color: #101216; }
+button.konczacy { background: var(--akcent); }
+button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--akcent); outline-offset: 3px; }
+
+.karta { box-shadow: 0 8px 26px #00000038; }
+.zakladki { box-shadow: 0 8px 24px #00000055; }
+.karta-glowa .nazwa { font-weight: 650; }
+.naglowek-sesji h1 { font-weight: 700; letter-spacing: -.02em; }
+button.glowny { font-weight: 750; }
+
+
+/* Restyl: „Grafit · Szampan”, odmiana B (ciepły beż jako stan „zrobione”, drobne napisy 600). Dopiski bez zmian układu. */
+:root {
+  --waga-drobnych: 600;
+  --przygaszony: #c2b6a3;
+  --tekst-etykiet: var(--przygaszony);
+  --tekst-planu: var(--przygaszony);
+}
+.etykieta, .wysilek legend, .zapas-serii legend,
+.skala-zapasu label, .skala .opis,
+.skala input[type="radio"]:checked + label .opis,
+.plan, .panel .plan, .trening-plan .plan,
+.zakladki a, .zakladki a.wybrana, .zakladki a span,
+.meta, .notka, .ostatnio, .upadek-serii,
+h2:not(.nazwa):not(.naglowek-treningu h2):not(.daty-tekst h2):not(.progresja-tygodniowa h2) {
+  font-weight: var(--waga-drobnych);
+}
+.etykieta { color: var(--tekst-etykiet); }
+.plan, .panel .plan, .trening-plan .plan { color: var(--tekst-planu); }
+/* Wygrywa z końcową regułą bazową przywracającą akcent. */
+button.konczacy { background: var(--zrobione); }
+
+/* Ćwiczenie w całości skończone — tylko dyskretne ✓ przy nazwie,
+   bez ramki i tła. Ramkę (3 px, jak pasek zrobionej serii) dostaje ćwiczenie AKTUALNE —
+   pierwsze nieukończone (szablon dodaje `.aktualne`): „tu teraz jesteś". */
+.karta.cwiczenie.ukonczone .karta-glowa .nazwa::after {
+  content: " ✓";
+  color: var(--zrobione);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.karta.cwiczenie.aktualne { border: 3px solid var(--zrobione); }
+
+/* Zapisana seria poza edycją: „kg" stoi zaraz za liczbą — pole ciężaru ma szerokość
+   z liczby znaków (`--zn` z szablonu, jednostka `ch`), a nie sztywny odstęp, który
+   przy „27,5" wchodził na cyfry. Pole przerwy zostaje po staremu. */
+.przelacznik-edycji:not(:checked) ~ .serie .zapisana .pole:not(.przerwa) .wejscie { display: flex; align-items: baseline; gap: .3rem; }
+.przelacznik-edycji:not(:checked) ~ .serie .zapisana .pole:not(.przerwa) .wejscie input { width: calc(var(--zn, 3) * 1ch + .4ch); min-width: 0; padding-right: 0; }
+.przelacznik-edycji:not(:checked) ~ .serie .zapisana .pole:not(.przerwa) .jedn { position: static; transform: none; left: auto; right: auto; }

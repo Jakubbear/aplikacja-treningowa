@@ -21,7 +21,7 @@
     <span class="etykieta">Ciężar</span>
     <span class="wejscie">
       <input type="text" id="{{ id }}" name="{{ nazwa }}" inputmode="decimal"
-             value="{{ wartosc }}" placeholder="masa ciała" autocomplete="off">
+             value="{{ wartosc }}" style="--zn: {{ [wartosc|string|length, 2]|max }}" placeholder="masa ciała" autocomplete="off">
       <span class="jedn">kg</span>
     </span>
   </label>
@@ -76,6 +76,12 @@
 {% set niezaczete = pozycje|rejectattr('id', 'in', serie.keys())|list %}
 {% set nastepna_id = niezaczete[0].id if niezaczete else none %}
 
+{# „Aktualne" ćwiczenie = pierwsze, w którym brakuje serii (po skończeniu poprzedniego). #}
+{% set biezace = namespace(id=none) %}
+{% for q in pozycje %}
+{% if biezace.id is none and serie.get(q.id, [])|length < [q.sets, limit_serii]|min %}{% set biezace.id = q.id %}{% endif %}
+{% endfor %}
+
 {% for p in pozycje %}
 {% set zrobione = serie.get(p.id, []) %}
 {% set ost = ostatnie.get(p.exercise_id) %}
@@ -90,7 +96,7 @@
 {% set ile_serii = [p.sets, limit_serii]|min %}
 {% set wszystkie = [zrobione|length, ile_serii]|max %}
 
-<section class="karta cwiczenie{% if zrobione|length >= ile_serii %} ukonczone{% endif %}" id="poz-{{ p.id }}">
+<section class="karta cwiczenie{% if zrobione|length >= ile_serii %} ukonczone{% elif p.id == biezace.id %} aktualne{% endif %}" id="poz-{{ p.id }}">
 
   {# Przełączniki muszą stać PRZED treścią karty, bo reszta sięga do nich
      selektorem `:checked ~ …` — bez jednej linijki JS-u. #}
